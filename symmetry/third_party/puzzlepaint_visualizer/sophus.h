@@ -32,15 +32,13 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-
 #include <Eigen/StdVector>
-#include <sophus/rxso3.hpp>
 #include <sophus/se2.hpp>
 #include <sophus/se3.hpp>
 #include <sophus/sim3.hpp>
 #include <sophus/so2.hpp>
 #include <sophus/so3.hpp>
-
+#include <sophus/rxso3.hpp>
 
 #include "libvis.h"
 

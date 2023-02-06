@@ -1,7 +1,7 @@
 SET(PROJECT_NAME Sophus)
 
 PROJECT(${PROJECT_NAME})
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 
 SET( CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -27,6 +27,8 @@ ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "^MSVC$")
    ADD_DEFINITIONS("-D _USE_MATH_DEFINES /bigobj /wd4305 /wd4244 /MP")
 ENDIF()
+
+SET(CMAKE_CXX_FLAGS "-Wno-error=deprecated-copy")
 
 ################################################################################
 # Add local path for finding packages, set the local version first
