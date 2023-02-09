@@ -13,8 +13,13 @@
 
 using namespace vis;
 
-void ExtractFeatures(std::filesystem::path image_directory, FeatureDetector &detector, Dataset &dataset, CalibrationWindow &calibration_window)
+void ExtractFeatures(
+    std::filesystem::path image_directory,
+    FeatureDetector &detector,
+    Dataset &dataset,
+    CalibrationWindow *calibration_window)
 {
+    // TODO: read in initial features to be refined, homography.
     // Filenames of all images with features to be refined.
     std::vector<std::string> filenames;
 
@@ -30,7 +35,7 @@ void ExtractFeatures(std::filesystem::path image_directory, FeatureDetector &det
         Image<Vec3u8> image(path);
         if (image.empty())
         {
-            std::cout << "[ERROR] Cannot read image: " << path << ". Aborting.";
+            std::cout << "[ERROR] Cannot read image: " << path << ". Aborting." << std::endl;
             return;
         }
         if (!image_size_set)
@@ -38,28 +43,30 @@ void ExtractFeatures(std::filesystem::path image_directory, FeatureDetector &det
         // I've removed an else statement that checks all imagesizes are the same.
 
         Image<Vec3u8> detection_visualization;
-        vector<PointFeature> features;
-        detector.DetectFeatures(image, features, detection_visualization); // TODO: Implement DetectFeatures
-        std::cout << path << ": " << features.size() << " features";
-        calibration_window.UpdateFeatureDetection(0, detection_visualization);
+        vector<Vec2f> features; // TODO: investigate this.
+        detector.DetectFeatures(image, features, calibration_window ? &detection_visualization : nullptr); // TODO: Implement DetectFeatures
+        std::cout << path << ": " << features.size() << " features" << std::endl;
+        calibration_window->UpdateFeatureDetection(0, detection_visualization);
     }
 }
 
-void refine_features(std::string path_to_image, std::string image_folder, CalibrationWindow &calibration_window)
+void refine_features(std::string path_to_image, std::string image_folder, CalibrationWindow *calibration_window)
 {
     Dataset dataset(1);       // Creating a single dataset. We'll assume there's always only one folder to look at for now.
     FeatureDetector detector; // TODO: initialize this.
 
-    calibration_window.SetDataset(&dataset);
+    if (calibration_window)
+    {
+        calibration_window->SetDataset(&dataset);
+    }
 
     FeatureDetector fd;
     std::filesystem::path fp(path_to_image);
     std::filesystem::path image_fn(image_folder);
 
-    // TODO: Implement ExtractFeatures
     ExtractFeatures(
         std::filesystem::path{fp / image_fn},
-        detector, // TODO
+        detector,
         dataset,
         calibration_window);
 
@@ -90,8 +97,11 @@ int main(int argc, char **argv)
 
     // Create the main window.
     CalibrationWindow calibration_window(nullptr, Qt::WindowFlags());
-    calibration_window.show();
-    calibration_window.raise();
+    if (show_visualizations)
+    {
+        calibration_window.show();
+        calibration_window.raise();
+    }
 
     // Starting a thread for UI to work while feature refinement is underway.
     std::thread calibrate_thread([&]
@@ -99,7 +109,7 @@ int main(int argc, char **argv)
         refine_features(
             std::string("/home/siheng/dha/symmetry"),
             std::string("image"),
-            calibration_window
+            show_visualizations ? &calibration_window : nullptr
         );
 
         RunInQtThreadBlocking([&]() {

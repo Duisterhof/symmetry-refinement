@@ -46,7 +46,7 @@ bool ReadNetPBMImage(
     Image<T>* image) {
   FILE* file = fopen(image_file_name.c_str(), "rb");
   if (!file) {
-    std::cout << "[ERROR] File cannot be opened.";
+    std::cout << "[ERROR] File cannot be opened." << std::endl;
     return false;
   }
   
@@ -67,7 +67,7 @@ bool ReadNetPBMImage(
     if (row[cursor] == 0 || row[cursor] == '\r' || row[cursor] == '\n' || row[cursor] == '#') {
       // Read next line, skip over comment lines.
       if (std::fgets(row, kRowBufferSize, file) == nullptr) {
-        std::cout << "[ERROR] Cannot parse file content.";
+        std::cout << "[ERROR] Cannot parse file content." << std::endl;
         fclose(file);
         return false;
       }
@@ -86,7 +86,7 @@ bool ReadNetPBMImage(
     if (parse_state == 0) {
       // Parse the file format header (P1 to P6).
       if (row[cursor] != 'P' || row[cursor + 1] < '1' || row[cursor + 1] > '6') {
-        std::cout << "[ERROR] Format seems incorrect.";
+        std::cout << "[ERROR] Format seems incorrect." << std::endl;
         fclose(file);
         return false;
       }
@@ -134,13 +134,13 @@ bool ReadNetPBMImage(
     if (maximum_value == numeric_limits<T>::max()) {
       // TODO: Assumes that the image values are tightly packed.
       if (image->stride() != image->width() * sizeof(T)) {
-        std::cout << "[ERROR] This implementation only supports images with tightly packed values.";
+        std::cout << "[ERROR] This implementation only supports images with tightly packed values." << std::endl;
         fclose(file);
         return false;
       }
       
       if (fread(image->data(), sizeof(T), width * height, file) != width * height) {
-        std::cout << "[ERROR] Cannot read image content.";
+        std::cout << "[ERROR] Cannot read image content." << std::endl;
         fclose(file);
         return false;
       }
@@ -157,7 +157,7 @@ bool ReadNetPBMImage(
         }
       }
     } else {
-      std::cout << "[ERROR] Unsupported file format type.";
+      std::cout << "[ERROR] Unsupported file format type." << std::endl;
       fclose(file);
       return false;
     }
@@ -182,7 +182,7 @@ bool ImageIONetPBM::Read(
 bool ImageIONetPBM::Read(
     const std::string& /*image_file_name*/,
     Image<Vec3u8>* /*image*/) const {
-  std::cout << "[FATAL] Function not implemented.";
+  std::cout << "[FATAL] Function not implemented." << std::endl;
   return false;  // TODO
 //   return ReadImpl(image_file_name, image);
 }
@@ -190,14 +190,14 @@ bool ImageIONetPBM::Read(
 bool ImageIONetPBM::Read(
     const std::string& /*image_file_name*/,
     Image<Vec4u8>* /*image*/) const {
-  std::cout << "[ERROR] Vec4 is not supported by the NetPBM image IO.";
+  std::cout << "[ERROR] Vec4 is not supported by the NetPBM image IO." << std::endl;
   return false;
 }
 
 bool ImageIONetPBM::Write(
     const std::string& /*image_file_name*/,
     const Image<u8>& /*image*/) const {
-  std::cout << "[FATAL] Function not implemented.";
+  std::cout << "[FATAL] Function not implemented." << std::endl;
   return false;  // TODO
 //   return WriteImpl(image_file_name, image);
 }
@@ -205,7 +205,7 @@ bool ImageIONetPBM::Write(
 bool ImageIONetPBM::Write(
     const std::string& /*image_file_name*/,
     const Image<u16>& /*image*/) const {
-  std::cout << "[FATAL] Function not implemented.";
+  std::cout << "[FATAL] Function not implemented." << std::endl;
   return false;  // TODO
 //   return WriteImpl(image_file_name, image);
 }
@@ -213,7 +213,7 @@ bool ImageIONetPBM::Write(
 bool ImageIONetPBM::Write(
     const std::string& /*image_file_name*/,
     const Image<Vec3u8>& /*image*/) const {
-  std::cout << "[FATAL] Function not implemented.";
+  std::cout << "[FATAL] Function not implemented." << std::endl;
   return false;  // TODO
 //   return WriteImpl(image_file_name, image);
 }
@@ -221,7 +221,7 @@ bool ImageIONetPBM::Write(
 bool ImageIONetPBM::Write(
     const std::string& /*image_file_name*/,
     const Image<Vec4u8>& /*image*/) const {
-  std::cout << "[ERROR] Vec4 is not supported by the NetPBM image IO.";
+  std::cout << "[ERROR] Vec4 is not supported by the NetPBM image IO." << std::endl;
   return false;
 }
 

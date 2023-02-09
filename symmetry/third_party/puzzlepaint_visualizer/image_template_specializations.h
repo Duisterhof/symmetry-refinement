@@ -5,7 +5,7 @@ template<>
 bool Image<u8>::Write(const string& image_file_name) const {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Write(image_file_name, *this);
@@ -15,7 +15,7 @@ template<>
 bool Image<u16>::Write(const string& image_file_name) const {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Write(image_file_name, *this);
@@ -25,7 +25,7 @@ template<>
 bool Image<Vec3u8>::Write(const string& image_file_name) const {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Write(image_file_name, *this);
@@ -35,7 +35,7 @@ template<>
 bool Image<Vec4u8>::Write(const string& image_file_name) const {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Write(image_file_name, *this);
@@ -45,7 +45,7 @@ template<>
 bool Image<u8>::Read(const string& image_file_name) {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Read(image_file_name, this);
@@ -55,7 +55,7 @@ template<>
 bool Image<u16>::Read(const string& image_file_name) {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Read(image_file_name, this);
@@ -65,7 +65,7 @@ template<>
 bool Image<Vec3u8>::Read(const string& image_file_name) {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Read(image_file_name, this);
@@ -75,7 +75,7 @@ template<>
 bool Image<Vec4u8>::Read(const string& image_file_name) {
   ImageIO* io = ImageIORegistry::Instance()->Get(image_file_name);
   if (!io) {
-    std::cout << "[ERROR] No image I/O handler exists.";
+    std::cout << "[ERROR] No image I/O handler exists." << std::endl;
     return false;
   }
   return io->Read(image_file_name, this);

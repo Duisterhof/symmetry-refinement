@@ -3,9 +3,16 @@
 #include "puzzlepaint_visualizer/dataset.h"
 #include "puzzlepaint_visualizer/image_display.h"
 #include "puzzlepaint_visualizer/hash_vec2i.h"
+
+#include "cpu_refinement_by_matching.hpp"
+#include "cpu_refinement_by_symmetry.hpp"
+
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
+
+#ifndef FEATURE_DETECTOR_H_
+#define FEATURE_DETECTOR_H_
 namespace vis
 {
     // Types of FeatureRefinement methods
@@ -158,8 +165,10 @@ namespace vis
             const Image<Vec2f> &gradient_image,
             const Image<float> &gradmag_image,
             int num_features,
+            const FeatureDetection *predicted_features,
             const FeatureDetection *output,
-            bool debug);
+            bool debug,
+            bool debug_step_by_step);
 
         void computeGradientGradmagImages(
             const Image<u8> &image,
@@ -168,16 +177,15 @@ namespace vis
 
         void DetectFeatures(
             const Image<Vec3u8> &image,
-            std::vector<PointFeature> &features,
-            Image<Vec3u8> &detection_Visualization);
+            std::vector<Vec2f> &features,
+            Image<Vec3u8> *detection_Visualization);
 
         void PredictAndDetectFeatures(
             const Image<u8> &image,
             const Image<Vec2f> &gradient_image,
             const Image<float> &gradmag_image,
-            vector<unordered_map<Vec2i, FeatureDetection>> *feature_predictions,
-            vector<unordered_map<Vec2i, FeatureDetection>> *feature_detections,
-            vector<unordered_set<Vec2i>> *feature_rejections,
+            vector<FeatureDetection> &feature_predictions,
+            vector<FeatureDetection> &feature_detections,
             bool debug,
             bool debug_step_by_step,
             Vec3u8 debug_colors[8]);
@@ -190,3 +198,4 @@ namespace vis
         std::vector<PatternData> patterns;
     };
 }
+#endif

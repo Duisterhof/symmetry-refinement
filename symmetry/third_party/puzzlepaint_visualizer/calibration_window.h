@@ -59,7 +59,11 @@ class CalibrationWindow : public QMainWindow {
   void UpdateInitialization(int camera_index, const Image<Vec3u8>& image);
   void UpdateObservationDirections(int camera_index, const Image<Vec3u8>& image);
   void UpdateErrorHistogram(int camera_index, const Image<u8>& image);
-  void UpdateReprojectionErrors(int camera_index, const Image<Vec3u8>& image, const Dataset* dataset, const BAState* state);
+  void UpdateReprojectionErrors(
+    int camera_index,
+    const Image<Vec3u8>& image,
+    const Dataset* dataset,
+    const BAState* state);
   void UpdateErrorDirections(int camera_index, const Image<Vec3u8>& image);
   void UpdateRemovedOutliers(int camera_index, const Image<Vec3u8>& image);
   
@@ -72,7 +76,8 @@ class CalibrationWindow : public QMainWindow {
       vector<ImageDisplayQtWindow*>* displays) {
     RunInQtThreadBlocking([&]() {
       if (camera_index < 0 || camera_index >= displays->size()) {
-        std::cout << "[ERROR] Invalid camera index or too small displays vector. camera_index: " << camera_index << ", displays->size(): " << displays->size();
+        std::cout << "[ERROR] Invalid camera index or too small displays vector. camera_index: " << camera_index 
+          << ", displays->size(): " << displays->size() << std::endl;
         return;
       }
       

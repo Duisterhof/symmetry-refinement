@@ -61,14 +61,14 @@ bool ImageIOQt::Read(const std::string& image_file_name,
 #else
   (void) image_file_name;
   (void) image;
-  std::cout << "[ERROR] u8 in the Qt image IO is only supported from Qt 5.5 on.";
+  std::cout << "[ERROR] u8 in the Qt image IO is only supported from Qt 5.5 on." << std::endl;
   return false;
 #endif
 }
 
 bool ImageIOQt::Read(const std::string& /*image_file_name*/,
                      Image<u16>* /*image*/) const {
-  std::cout << "[ERROR] u16 is not supported by the Qt image IO.";
+  std::cout << "[ERROR] u16 is not supported by the Qt image IO." << std::endl;
   return false;
 }
 
@@ -127,7 +127,7 @@ bool ImageIOQt::Write(const std::string& image_file_name,
 
 bool ImageIOQt::Write(const std::string& /*image_file_name*/,
                       const Image<u16>& /*image*/) const {
-  std::cout << "[ERROR] u16 is not supported by the Qt image IO.";
+  std::cout << "[ERROR] u16 is not supported by the Qt image IO." << std::endl;
   return false;
 }
 

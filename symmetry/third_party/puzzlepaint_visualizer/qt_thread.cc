@@ -44,7 +44,7 @@ namespace vis {
 
 void RunInQtThread(const function<void()>& f) {
   if (!qApp) {
-    std::cout << "[ERROR] RunInQtThread(): No qApp exists. Not running the function.";
+    std::cout << "[ERROR] RunInQtThread(): No qApp exists. Not running the function." << std::endl;
     return;
   }
   if (QThread::currentThread() == qApp->thread()) {
@@ -64,7 +64,7 @@ void RunInQtThread(const function<void()>& f) {
 
 void RunInQtThreadBlocking(const function<void()>& f) {
   if (!qApp) {
-    std::cout << "[ERROR] RunInQtThreadBlocking(): No qApp exists. Not running the function.";
+    std::cout << "[ERROR] RunInQtThreadBlocking(): No qApp exists. Not running the function." << std::endl;
     return;
   }
   if (QThread::currentThread() == qApp->thread()) {

@@ -30,9 +30,10 @@
 
 #include "puzzlepaint_visualizer/eigen.h"
 #include "puzzlepaint_visualizer/image.h"
-#include <libvis/libvis.h>
+#include "puzzlepaint_visualizer/libvis.h"
+#include "feature_detector.hpp"
 
-#include "camera_calibration/feature_detection/feature_detector_tagged_pattern.h"
+// #include "camera_calibration/feature_detection/feature_detector_tagged_pattern.h"
 
 namespace vis {
 
@@ -298,7 +299,7 @@ bool RefineFeatureByMatching(
           window_half_size, image, num_samples,
           samples, rendered_samples)) {
     if (debug) {
-      LOG(WARNING) << "Corner refinement failed because a sample was outside the image";
+      std::cout << "[ Corner refinement failed because a sample was outside the image" << std::endl;
     }
     return false;
   }
@@ -323,7 +324,7 @@ bool RefineFeatureByMatching(
         *out_position, factor, bias, window_half_size, image, num_samples, samples, rendered_samples,
         &H, &b, &cost)) {
       if (debug) {
-        LOG(WARNING) << "Corner refinement failed because a sample was outside the image";
+        std::cout << "Corner refinement failed because a sample was outside the image" << std::endl;
       }
       return false;
     }
@@ -384,7 +385,7 @@ bool RefineFeatureByMatching(
       // The result is probably not the originally intended corner,
       // since it is not within the original search window.
       if (debug) {
-        LOG(WARNING) << "Corner refinement failed because the refined position left the original window";
+        std::cout << "Corner refinement failed because the refined position left the original window" << std::endl;
       }
       return false;
     }
@@ -400,7 +401,7 @@ bool RefineFeatureByMatching(
   // No convergence after exceeding the maximum iteration count?
   if (!converged) {
     if (debug) {
-      LOG(WARNING) << "Corner refinement failed because the optimization did not converge";
+      std::cout << "Corner refinement failed because the optimization did not converge" << std::endl;
     }
     return false;
   }
@@ -408,7 +409,7 @@ bool RefineFeatureByMatching(
   // Bad factor in affine intensity transformation?
   if (factor <= 0) {
     if (debug) {
-      LOG(WARNING) << "Corner refinement failed because of negative affine factor (" << factor << ")";
+      std::cout << "Corner refinement failed because of negative affine factor (" << factor << ")" << std::endl;
     }
     return false;
   }
