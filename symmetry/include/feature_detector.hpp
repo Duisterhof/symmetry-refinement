@@ -4,6 +4,7 @@
 #include "puzzlepaint_visualizer/image_display.h"
 #include "puzzlepaint_visualizer/hash_vec2i.h"
 
+#include "yaml-cpp/yaml.h"
 #include "cpu_refinement_by_matching.hpp"
 #include "cpu_refinement_by_symmetry.hpp"
 
@@ -155,10 +156,10 @@ namespace vis
     class FeatureDetector
     {
     public:
-        FeatureDetector()
-        {
-            d.reset(new FeatureDetectorTaggedPatternPrivate());
-        }
+        FeatureDetector(
+            const std::string &pattern_yaml_paths,
+            int window_half_extent,
+            FeatureRefinement refinement_type);
 
         void RefineFeatureDetections(
             const Image<u8> &image,
@@ -190,12 +191,19 @@ namespace vis
             bool debug_step_by_step,
             Vec3u8 debug_colors[8]);
 
+        bool SetPatternYAMLPaths(const std::string path);
+
+        void GetFeaturePredictions(std::vector<FeatureDetection>& feature_predictions);
+
     private:
         int window_half_extent;
         unique_ptr<FeatureDetectorTaggedPatternPrivate> d;
         FeatureRefinement refinement_type;
         std::string image_folder_name;
+        std::string feat_yaml_name;
         std::vector<PatternData> patterns;
+        float cell_length_in_meters;
+        bool valid_;
     };
 }
 #endif

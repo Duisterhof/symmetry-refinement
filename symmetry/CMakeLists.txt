@@ -1,6 +1,7 @@
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Find includes in corresponding build directories.
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -11,8 +12,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 add_subdirectory(third_party/sophus)
+add_subdirectory(third_party/yaml-cpp-0.6.0)
 
 find_package(Qt5 5.8 REQUIRED COMPONENTS Core OpenGL Widgets)
+
 # find_package(Qt5X11Extras REQUIRED)
 find_package(Threads REQUIRED)
 
@@ -20,7 +23,7 @@ set(VISUALIZER
     third_party/puzzlepaint_visualizer/image_display.h
     third_party/puzzlepaint_visualizer/image_display.cc
     third_party/puzzlepaint_visualizer/image_display_qt_widget.h
-    third_party/puzzlepaint_visualizer/image_display_qt_widget.cc    
+    third_party/puzzlepaint_visualizer/image_display_qt_widget.cc
     third_party/puzzlepaint_visualizer/image_display_qt_window.h
     third_party/puzzlepaint_visualizer/image_display_qt_window.cc
     third_party/puzzlepaint_visualizer/any_image.h
@@ -50,6 +53,7 @@ set(VISUALIZER
     third_party/resources/resources.qrc
 )
 
+# Building symmetry_refinement_visualizer library.
 add_library(symmetry_refinement_visualizer SHARED ${VISUALIZER})
 target_include_directories(symmetry_refinement_visualizer
     PUBLIC
@@ -59,7 +63,7 @@ target_include_directories(symmetry_refinement_visualizer
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Opengl_INCLUDE_DIRS}
 )
-target_link_libraries(symmetry_refinement_visualizer 
+target_link_libraries(symmetry_refinement_visualizer
     PUBLIC
     ${Qt5Opengl_LIBRARIES}
     ${Qt5Core_LIBRARIES}
@@ -73,26 +77,24 @@ if(Qt5Widgets_FOUND)
     target_compile_options(symmetry_refinement_visualizer PUBLIC -DLIBVIS_HAVE_QT)
 endif()
 
-# Building symmetry_exec
-set(SYMMETRY_REFINEMENT_INCLUDES
 
-)
-
+# Building symmetry_exec executable.
 set(SYMMETRY_REFINEMENT_EXECUTABLES
     include/cpu_refinement_by_symmetry.hpp
-    include/cpu_refinement_by_matching.hpp    
+    include/cpu_refinement_by_matching.hpp
     include/feature_detector.hpp
     src/feature_detector.cpp
     src/cpu_refinement.cpp
     src/main.cpp
 )
 
-add_executable(symmetry_exec 
+add_executable(symmetry_exec
     ${SYMMETRY_REFINEMENT_EXECUTABLES})
 
 target_include_directories(symmetry_exec
-    PRIVATE 
+    PRIVATE
     third_party/sophus
+    third_party/yaml-cpp-0.6.0/include
     src
     include
     third_party
@@ -102,4 +104,5 @@ target_link_libraries(symmetry_exec
     PRIVATE
     Threads::Threads
     symmetry_refinement_visualizer
+    yaml-cpp2
 )

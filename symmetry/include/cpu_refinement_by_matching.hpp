@@ -299,7 +299,7 @@ bool RefineFeatureByMatching(
           window_half_size, image, num_samples,
           samples, rendered_samples)) {
     if (debug) {
-      std::cout << "[ Corner refinement failed because a sample was outside the image" << std::endl;
+      std::cout << "Corner refinement failed because a sample was outside the image" << std::endl;
     }
     return false;
   }

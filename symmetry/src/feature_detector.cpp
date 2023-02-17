@@ -2,6 +2,101 @@
 
 namespace vis
 {
+    FeatureDetector::FeatureDetector(
+        const std::string &pattern_yaml_path,
+        int window_half_extent,
+        FeatureRefinement refinement_type)
+    {
+        d.reset(new FeatureDetectorTaggedPatternPrivate());
+        this->window_half_extent = window_half_extent;
+        this->refinement_type = refinement_type;
+        SetPatternYAMLPaths(pattern_yaml_path);
+        feat_yaml_name = pattern_yaml_path;
+    }
+
+    /**
+     * @brief IO function for setting pattern properties.
+     *
+     * @param path
+     * @return true
+     * @return false
+     */
+    bool FeatureDetector::SetPatternYAMLPaths(const std::string path)
+    {
+        d->patterns.clear();
+        try
+        {
+            YAML::Node file_node = YAML::LoadFile(path);
+
+            if (file_node.IsNull())
+            {
+                std::cout << "[ERROR] Cannot read file: " << path << std::endl;
+                return false;
+            }
+
+            PatternData data;
+            data.num_star_segments = file_node["num_star_segments"].as<int>();
+
+            d->patterns.push_back(data);
+        }
+        catch (const YAML::BadFile &ex)
+        {
+            std::cout << "[ERROR] Cannot read pattern file: " << path << std::endl;
+            valid_ = false;
+            return false;
+        }
+
+        return true;
+    }
+
+    void FeatureDetector::GetFeaturePredictions(std::vector<FeatureDetection> &feature_predictions)
+    {
+        try
+        {
+            YAML::Node file_node = YAML::LoadFile(feat_yaml_name);
+
+            if (file_node.IsNull())
+            {
+                std::cout << "[ERROR] Cannot read file: " << feat_yaml_name << std::endl;
+            }
+
+            Mat3f homography = Eigen::Map<Mat3f>(file_node["homography"].as<std::vector<float>>().data());
+            homography.transposeInPlace(); // I can't figure out how to read this in properly so this will suffice lol.
+            // This is also pattern to pixel, so invert it.
+            std::cout << "Homography read in = \n" << homography << std::endl;
+
+            std::vector<std::vector<float>> l_feat_px_coord = 
+                file_node["features"].as<std::vector<std::vector<float>>>();
+            std::vector<std::vector<float>> l_feat_pat_coord = 
+                file_node["star_points"].as<std::vector<std::vector<float>>>();
+            
+            int n_features = l_feat_px_coord.size();
+            for (int i=0; i<n_features; i++)
+            {
+                FeatureDetection ft;
+                Vec2f feat_px_coords = Eigen::Map<Vec2f>(l_feat_px_coord[i].data());
+                Vec2f feat_pat_coords = Eigen::Map<Vec2f>(l_feat_pat_coord[i].data());
+                Mat3f to_local_pattern;
+                to_local_pattern << 1, 0, feat_pat_coords.x(),
+                                    0, 1, feat_pat_coords.y(),
+                                    0, 0, 1;
+                Mat3f to_local_image;
+                to_local_image << 1, 0, -feat_px_coords.x(),
+                                  0, 1, -feat_px_coords.y(),
+                                  0, 0, 1;
+                ft.position = feat_px_coords;
+                Mat3f calculated_homography = to_local_image * homography * to_local_pattern;
+                ft.local_pixel_tr_pattern = calculated_homography;
+                std::cout << "Homography calculated = \n" << calculated_homography << std::endl;
+                feature_predictions.push_back(ft);
+            }
+        }
+        catch (const YAML::BadFile &ex)
+        {
+            std::cout << "[ERROR] Cannot read pattern file: " << feat_yaml_name << std::endl;
+        }
+    }
+
     void FeatureDetector::PredictAndDetectFeatures(
         const Image<u8> &image,
         const Image<Vec2f> &gradient_image,
@@ -65,6 +160,8 @@ namespace vis
         {
             FeatureDetection &refined_feature = refined_detections[index];
             ++index;
+            // std::cout << "current_feature cost = " << refined_feature.final_cost << std::endl;
+            // std::cout << "current_feature_pos = " << refined_feature.position << std::endl;
 
             // For features discarded during refinement, the cost is set to a negative value.
             if (refined_feature.final_cost < 0)
@@ -113,6 +210,18 @@ namespace vis
         }
     }
 
+    /**
+     * @brief Bulk of the actual refinement occurs here.
+     * 
+     * @param image 
+     * @param gradient_image 
+     * @param gradmag_image 
+     * @param num_features 
+     * @param predicted_features 
+     * @param output 
+     * @param debug 
+     * @param debug_step_by_step 
+     */
     void FeatureDetector::RefineFeatureDetections(
         const Image<u8> &image,
         const Image<Vec2f> &gradient_image,
@@ -263,17 +372,39 @@ namespace vis
         }
     }
 
+    /**
+     * @brief No features are being detected here; instead, features will be fed in from the start.
+     *
+     * feature_predictions within this function refers to the features we have detected.
+     *
+     * @param image
+     * @param features
+     * @param detection_visualization
+     */
     void FeatureDetector::DetectFeatures(
         const Image<Vec3u8> &image,
         std::vector<Vec2f> &features,
         Image<Vec3u8> *detection_visualization)
     {
+        const bool kDebug = true;
+        // Prepare debug display.
+        if (kDebug)
+        {
+            if (!d->debug_display)
+            {
+                d->debug_display.reset(new ImageDisplay());
+            }
+            d->debug_display->Clear();
+            d->debug_display->Update(image, "Feature detection");
+        }
+
         // Setting up image to be visualized
         detection_visualization->SetSize(image.size());
         detection_visualization->SetTo(image);
 
         // Prepare sample positions.
-        int max_sample_count = static_cast<int>(8.0 * (2 * window_half_extent + 1) * (2 * window_half_extent + 1) + 0.5);
+        int max_sample_count = static_cast<int>(
+            8.0 * (2 * window_half_extent + 1) * (2 * window_half_extent + 1) + 0.5);
         if (d->samples.empty() || d->samples.size() < max_sample_count)
         {
             d->samples.resize(max_sample_count);
@@ -304,6 +435,7 @@ namespace vis
 
         // TODO: Read features into this format.
         vector<FeatureDetection> feature_predictions;
+        GetFeaturePredictions(feature_predictions);
 
         /// Mapping: feature_predictions[pattern_array_index][Vec2i(pattern_x, pattern_y)] -> final feature detection.
         vector<FeatureDetection> feature_detections;
@@ -314,12 +446,15 @@ namespace vis
             gradmag_image,
             feature_predictions,
             feature_detections,
-            false,
+            true,
             false,
             debug_colors);
 
+        // Getting results from PredictAndDetectFeatures.
         for (auto &pattern_feature_detections : feature_detections)
         {
+            std::cout << pattern_feature_detections.position << std::endl;
+            features.push_back(pattern_feature_detections.position);
         }
     }
 }
