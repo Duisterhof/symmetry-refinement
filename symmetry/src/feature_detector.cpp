@@ -63,31 +63,38 @@ namespace vis
             Mat3f homography = Eigen::Map<Mat3f>(file_node["homography"].as<std::vector<float>>().data());
             homography.transposeInPlace(); // I can't figure out how to read this in properly so this will suffice lol.
             // This is also pattern to pixel, so invert it.
-            std::cout << "Homography read in = \n" << homography << std::endl;
+            std::cout << "Homography read in = \n"
+                      << homography << std::endl;
 
-            std::vector<std::vector<float>> l_feat_px_coord = 
+            std::vector<std::vector<float>> l_feat_px_coord =
                 file_node["features"].as<std::vector<std::vector<float>>>();
-            std::vector<std::vector<float>> l_feat_pat_coord = 
+            std::vector<std::vector<float>> l_feat_pat_coord =
                 file_node["star_points"].as<std::vector<std::vector<float>>>();
-            
+
             int n_features = l_feat_px_coord.size();
-            for (int i=0; i<n_features; i++)
+            for (int i = 0; i < n_features; i++)
             {
                 FeatureDetection ft;
                 Vec2f feat_px_coords = Eigen::Map<Vec2f>(l_feat_px_coord[i].data());
                 Vec2f feat_pat_coords = Eigen::Map<Vec2f>(l_feat_pat_coord[i].data());
+                Mat3f reflect;
+                reflect << -1, 0, 0,
+                            0, 1, 0,
+                            0, 0, 1;                
                 Mat3f to_local_pattern;
-                to_local_pattern << 1, 0, feat_pat_coords.x(),
-                                    0, 1, feat_pat_coords.y(),
-                                    0, 0, 1;
+                to_local_pattern << 400., 0, feat_pat_coords.x(),
+                                    0, 400., feat_pat_coords.y(),
+                                    0,    0, 1;
                 Mat3f to_local_image;
-                to_local_image << 1, 0, -feat_px_coords.x(),
-                                  0, 1, -feat_px_coords.y(),
+                // - 0.5f here is to move pixels on both x and y direction to pixel center convention.
+                to_local_image << 1, 0, -feat_px_coords.x() - 0.5f,
+                                  0, 1, -feat_px_coords.y() - 0.5f,
                                   0, 0, 1;
                 ft.position = feat_px_coords;
-                Mat3f calculated_homography = to_local_image * homography * to_local_pattern;
+                Mat3f calculated_homography = to_local_image * homography * to_local_pattern * reflect;
                 ft.local_pixel_tr_pattern = calculated_homography;
-                std::cout << "Homography calculated = \n" << calculated_homography << std::endl;
+                std::cout << "Homography calculated = \n"
+                          << calculated_homography << std::endl;
                 feature_predictions.push_back(ft);
             }
         }
@@ -101,8 +108,8 @@ namespace vis
         const Image<u8> &image,
         const Image<Vec2f> &gradient_image,
         const Image<float> &gradmag_image,
-        vector<FeatureDetection> &feature_predictions, // input
-        vector<FeatureDetection> &feature_detections,  // output
+        vector<FeatureDetection> *feature_predictions, // input
+        vector<FeatureDetection> *feature_detections,  // output
         bool debug,
         bool debug_step_by_step,
         Vec3u8 debug_colors[8])
@@ -110,7 +117,7 @@ namespace vis
         const int kIncrementalPredictionErrorThreshold = window_half_extent * 4 / 5.f; // In pixels. TODO: make configurable
         constexpr float kMinimumFeatureDistance = 5;                                   // in pixels; TODO: make configurable
 
-        feature_detections.resize(feature_predictions.size());
+        feature_detections->resize(feature_predictions->size());
 
         // Used to be a while loop here. Not necessary since we're simplifying the data structures.
 
@@ -118,7 +125,7 @@ namespace vis
         if (debug)
         {
             // Show all feature predictions in gray
-            for (auto &item : feature_predictions)
+            for (auto &item : *feature_predictions)
             {
                 d->debug_display->AddSubpixelDotPixelCornerConv(
                     item.position + Vec2f::Constant(0.5f), Vec3u8(127, 127, 127));
@@ -138,7 +145,7 @@ namespace vis
         features_for_refinement.reserve(128);
         vector<FeatureDetection> refined_detections;
         refined_detections.reserve(128);
-        for (auto feature : feature_predictions)
+        for (auto feature : *feature_predictions)
         {
             features_for_refinement.push_back(feature);
             refined_detections.emplace_back();
@@ -156,12 +163,12 @@ namespace vis
 
         int index = 0; // Used to track index of refined_detections
 
-        for (auto &predicted_feature : feature_predictions)
+        for (auto &predicted_feature : *feature_predictions)
         {
             FeatureDetection &refined_feature = refined_detections[index];
             ++index;
-            // std::cout << "current_feature cost = " << refined_feature.final_cost << std::endl;
-            // std::cout << "current_feature_pos = " << refined_feature.position << std::endl;
+            std::cout << "current_feature cost = " << refined_feature.final_cost << std::endl;
+            std::cout << "current_feature_pos = " << refined_feature.position << std::endl;
 
             // For features discarded during refinement, the cost is set to a negative value.
             if (refined_feature.final_cost < 0)
@@ -174,7 +181,7 @@ namespace vis
 
             // Check whether the returned position is too close to an existing one.
             bool reject_detection = false;
-            for (auto &existing_detection : feature_detections)
+            for (auto &existing_detection : *feature_detections)
             {
                 float squared_distance = (existing_detection.position - refined_feature.position).squaredNorm();
                 if (!(squared_distance >= kMinimumFeatureDistance * kMinimumFeatureDistance))
@@ -190,7 +197,7 @@ namespace vis
             refined_feature.local_pixel_tr_pattern = predicted_feature.local_pixel_tr_pattern;
 
             // Add the refined position as a new detection.
-            feature_detections.push_back(refined_feature);
+            feature_detections->push_back(refined_feature);
 
             if (debug)
             {
@@ -200,7 +207,7 @@ namespace vis
             }
         }
 
-        feature_predictions.clear(); // cleanup
+        feature_predictions->clear(); // cleanup
 
         if (debug && debug_step_by_step)
         {
@@ -212,15 +219,15 @@ namespace vis
 
     /**
      * @brief Bulk of the actual refinement occurs here.
-     * 
-     * @param image 
-     * @param gradient_image 
-     * @param gradmag_image 
-     * @param num_features 
-     * @param predicted_features 
-     * @param output 
-     * @param debug 
-     * @param debug_step_by_step 
+     *
+     * @param image
+     * @param gradient_image
+     * @param gradmag_image
+     * @param num_features
+     * @param predicted_features
+     * @param output
+     * @param debug
+     * @param debug_step_by_step
      */
     void FeatureDetector::RefineFeatureDetections(
         const Image<u8> &image,
@@ -228,7 +235,7 @@ namespace vis
         const Image<float> &gradmag_image,
         int num_features,
         const FeatureDetection *predicted_features,
-        const FeatureDetection *output,
+        FeatureDetection *output,
         bool debug,
         bool debug_step_by_step)
     {
@@ -239,7 +246,7 @@ namespace vis
 
         for (usize i = 0; i < num_features; ++i)
         {
-            FeatureDetection this_output = output[i];
+            FeatureDetection &this_output = output[i];
             const Mat3f &local_pixel_tr_pattern = predicted_features[i].local_pixel_tr_pattern;
             Mat3f local_pattern_tr_pixel = local_pixel_tr_pattern.inverse();
             if (!RefineFeatureByMatching(
@@ -270,6 +277,7 @@ namespace vis
             }
 
             position_after_intensity_based_refinement[i] = this_output.position;
+            std::cout << "Position after intensity_based_refinement = " << position_after_intensity_based_refinement[i] << std::endl;
             bool feature_found_from_symmetry = false;
             if (refinement_type == FeatureRefinement::GradientsXY)
             {
@@ -339,6 +347,32 @@ namespace vis
                 }
                 this_output.final_cost = -1;
                 continue;
+            }
+        }
+        // Filter outliers based on the difference between the two refined positions.
+        for (usize i = 0; i < num_features; ++i)
+        {
+            FeatureDetection &this_output = output[i];
+
+            if (this_output.final_cost >= 0 &&
+                (this_output.position - position_after_intensity_based_refinement[i]).squaredNorm() > 0.75f)
+            { // TODO: make parameter
+                // If the position after raw intensities based refinement is too different
+                // from the position after gradient based refinement, the recording conditions
+                // are probably bad.
+                if (debug)
+                {
+                    d->debug_display->AddSubpixelDotPixelCornerConv(position_after_intensity_based_refinement[i] + Vec2f::Constant(0.5f), Vec3u8(200, 20, 20));
+                    d->debug_display->AddSubpixelDotPixelCornerConv(this_output.position + Vec2f::Constant(0.5f), Vec3u8(20, 150, 20));
+                    if (debug_step_by_step)
+                    {
+                        std::cout << "[WARNING] Corner rejected because of large difference between raw-intensity and gradient refinement: "
+                                     << (this_output.position - position_after_intensity_based_refinement[i]).norm() << " px" << std::endl;
+                        d->debug_display->Update();
+                        std::getchar();
+                    }
+                }
+                this_output.final_cost = -1;
             }
         }
     }
@@ -444,10 +478,10 @@ namespace vis
             gray_image,
             gradient_image,
             gradmag_image,
-            feature_predictions,
-            feature_detections,
+            &feature_predictions,
+            &feature_detections,
             true,
-            false,
+            true,
             debug_colors);
 
         // Getting results from PredictAndDetectFeatures.

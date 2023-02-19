@@ -167,7 +167,7 @@ namespace vis
             const Image<float> &gradmag_image,
             int num_features,
             const FeatureDetection *predicted_features,
-            const FeatureDetection *output,
+            FeatureDetection *output,
             bool debug,
             bool debug_step_by_step);
 
@@ -185,8 +185,8 @@ namespace vis
             const Image<u8> &image,
             const Image<Vec2f> &gradient_image,
             const Image<float> &gradmag_image,
-            vector<FeatureDetection> &feature_predictions,
-            vector<FeatureDetection> &feature_detections,
+            vector<FeatureDetection> *feature_predictions,
+            vector<FeatureDetection> *feature_detections,
             bool debug,
             bool debug_step_by_step,
             Vec3u8 debug_colors[8]);

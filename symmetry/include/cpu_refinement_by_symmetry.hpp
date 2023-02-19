@@ -48,7 +48,7 @@ namespace vis
         float *final_cost,
         bool debug)
     {
-        constexpr bool kDebug = false;
+        constexpr bool kDebug = true;
 
         Vec2f original_position = position;
         *out_position = position;
