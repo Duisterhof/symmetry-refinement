@@ -70,8 +70,8 @@ namespace vis
                 file_node["features"].as<std::vector<std::vector<float>>>();
             std::vector<std::vector<float>> l_feat_pat_coord =
                 file_node["star_points"].as<std::vector<std::vector<float>>>();
-            
-            // float board_square_length_mm = file_node["board_square_length_mm"].as<float>;
+
+            float pattern_coordinates_scale = file_node["pattern_coordinates_scale"].as<float>();
             int n_features = l_feat_px_coord.size();
             for (int i = 0; i < n_features; i++)
             {
@@ -80,20 +80,20 @@ namespace vis
                 Vec2f feat_pat_coords = Eigen::Map<Vec2f>(l_feat_pat_coord[i].data());
 
                 Vec2f predicted_position = feat_px_coords - Vec2f::Constant(0.5f);
-                        
+
                 Mat3f to_local_pattern; // Scaling pattern coordinates and translating.
-                to_local_pattern << 40., 0,   feat_pat_coords.x(),
-                                    0,   40., feat_pat_coords.y(),
-                                    0,   0,   1;
+                to_local_pattern << pattern_coordinates_scale, 0, feat_pat_coords.x(),
+                    0, pattern_coordinates_scale, feat_pat_coords.y(),
+                    0, 0, 1;
                 Mat3f to_local_image;
                 // - 0.5f here is to move pixels on both x and y direction to pixel center convention.
                 to_local_image << 1, 0, -predicted_position.x() - 0.5f,
-                                  0, 1, -predicted_position.y() - 0.5f,
-                                  0, 0, 1;
+                    0, 1, -predicted_position.y() - 0.5f,
+                    0, 0, 1;
                 ft.position = predicted_position;
 
                 // Mat3f calculated_homography = to_local_image * homography *  to_local_pattern;
-                Mat3f calculated_homography = to_local_image * homography *  to_local_pattern;
+                Mat3f calculated_homography = to_local_image * homography * to_local_pattern;
                 ft.local_pixel_tr_pattern = calculated_homography;
                 std::cout << "Homography calculated = \n"
                           << calculated_homography << std::endl;
@@ -278,7 +278,7 @@ namespace vis
                 this_output.final_cost = -1;
                 continue;
             }
-            
+
             std::cout << "Final cost = " << final_cost << std::endl;
             // TOREMOVE: Try hypothesis about shifting wrong way
             Vec2f shift = this_output.position - predicted_features[i].position;
@@ -286,7 +286,7 @@ namespace vis
             // std::cout << "shift = " << shift << std::endl;
             // std::cout << "predicted_features = " << predicted_features[i].position << std::endl;
             // position_after_intensity_based_refinement[i] = this_output.position - shift*2;
-            
+
             position_after_intensity_based_refinement[i] = this_output.position;
             std::cout << "intensitybased = " << position_after_intensity_based_refinement[i] << std::endl;
             bool feature_found_from_symmetry = false;
@@ -378,7 +378,7 @@ namespace vis
                     if (debug_step_by_step)
                     {
                         std::cout << "[WARNING] Corner rejected because of large difference between raw-intensity and gradient refinement: "
-                                     << (this_output.position - position_after_intensity_based_refinement[i]).norm() << " px" << std::endl;
+                                  << (this_output.position - position_after_intensity_based_refinement[i]).norm() << " px" << std::endl;
                         std::cout << "Position after intensity_based_refinement = " << position_after_intensity_based_refinement[i] << std::endl;
                         std::cout << "this_output.position=" << this_output.position << std::endl;
                         d->debug_display->Update();
@@ -420,7 +420,7 @@ namespace vis
     }
 
     /**
-     * @brief No features are being detected here; instead, features will be fed in from the start. 
+     * @brief No features are being detected here; instead, features will be fed in from the start.
      * I kept the function name DetectFeatures for easy debugging with 10K param toolbox.
      *
      * feature_predictions within this function refers to the features we have detected.
@@ -431,7 +431,7 @@ namespace vis
      */
     void FeatureDetector::DetectFeatures(
         const Image<Vec3u8> &image,
-        std::vector<std::pair<bool,Vec2f>> &features,
+        std::vector<std::pair<bool, Vec2f>> &features,
         Image<Vec3u8> *detection_visualization)
     {
         const bool kDebug = true;
@@ -502,10 +502,11 @@ namespace vis
         for (auto &pattern_feature_detections : feature_detections)
         {
             bool feature_refined = true;
-            if (pattern_feature_detections.final_cost == -1) {
+            if (pattern_feature_detections.final_cost == -1)
+            {
                 feature_refined = false;
             }
-            features.push_back(std::pair<bool,Vec2f>(feature_refined, pattern_feature_detections.position));
+            features.push_back(std::pair<bool, Vec2f>(feature_refined, pattern_feature_detections.position));
         }
     }
 }
