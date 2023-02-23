@@ -179,6 +179,7 @@ namespace vis
         void DetectFeatures(
             const Image<Vec3u8> &image,
             std::vector<Vec2f> &features,
+            const std::string yaml_filename,
             Image<Vec3u8> *detection_Visualization);
 
         void PredictAndDetectFeatures(

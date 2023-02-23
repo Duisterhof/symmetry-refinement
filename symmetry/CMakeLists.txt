@@ -83,6 +83,7 @@ set(SYMMETRY_REFINEMENT_EXECUTABLES
     include/cpu_refinement_by_symmetry.hpp
     include/cpu_refinement_by_matching.hpp
     include/feature_detector.hpp
+    include/CLI11.hpp
     src/feature_detector.cpp
     src/cpu_refinement.cpp
     src/main.cpp

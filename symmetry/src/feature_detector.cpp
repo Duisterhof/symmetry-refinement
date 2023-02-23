@@ -70,28 +70,30 @@ namespace vis
                 file_node["features"].as<std::vector<std::vector<float>>>();
             std::vector<std::vector<float>> l_feat_pat_coord =
                 file_node["star_points"].as<std::vector<std::vector<float>>>();
-
+            
+            // float board_square_length_mm = file_node["board_square_length_mm"].as<float>;
             int n_features = l_feat_px_coord.size();
             for (int i = 0; i < n_features; i++)
             {
                 FeatureDetection ft;
                 Vec2f feat_px_coords = Eigen::Map<Vec2f>(l_feat_px_coord[i].data());
                 Vec2f feat_pat_coords = Eigen::Map<Vec2f>(l_feat_pat_coord[i].data());
-                Mat3f reflect;
-                reflect << -1, 0, 0,
-                            0, 1, 0,
-                            0, 0, 1;                
-                Mat3f to_local_pattern;
-                to_local_pattern << 400., 0, feat_pat_coords.x(),
-                                    0, 400., feat_pat_coords.y(),
-                                    0,    0, 1;
+
+                Vec2f predicted_position = feat_px_coords - Vec2f::Constant(0.5f);
+                        
+                Mat3f to_local_pattern; // Scaling pattern coordinates and translating.
+                to_local_pattern << 40., 0,   feat_pat_coords.x(),
+                                    0,   40., feat_pat_coords.y(),
+                                    0,   0,   1;
                 Mat3f to_local_image;
                 // - 0.5f here is to move pixels on both x and y direction to pixel center convention.
-                to_local_image << 1, 0, -feat_px_coords.x() - 0.5f,
-                                  0, 1, -feat_px_coords.y() - 0.5f,
+                to_local_image << 1, 0, -predicted_position.x() - 0.5f,
+                                  0, 1, -predicted_position.y() - 0.5f,
                                   0, 0, 1;
-                ft.position = feat_px_coords;
-                Mat3f calculated_homography = to_local_image * homography * to_local_pattern * reflect;
+                ft.position = predicted_position;
+
+                // Mat3f calculated_homography = to_local_image * homography *  to_local_pattern;
+                Mat3f calculated_homography = to_local_image * homography *  to_local_pattern;
                 ft.local_pixel_tr_pattern = calculated_homography;
                 std::cout << "Homography calculated = \n"
                           << calculated_homography << std::endl;
@@ -249,6 +251,7 @@ namespace vis
             FeatureDetection &this_output = output[i];
             const Mat3f &local_pixel_tr_pattern = predicted_features[i].local_pixel_tr_pattern;
             Mat3f local_pattern_tr_pixel = local_pixel_tr_pattern.inverse();
+            float final_cost;
             if (!RefineFeatureByMatching(
                     num_intensity_samples,
                     d->samples,
@@ -258,7 +261,7 @@ namespace vis
                     local_pattern_tr_pixel,
                     d->patterns[0], // TODO: Use the correct pattern here instead of always the one with index 0
                     &this_output.position,
-                    nullptr,
+                    &final_cost,
                     debug))
             {
                 // Could not find a corner here.
@@ -275,9 +278,17 @@ namespace vis
                 this_output.final_cost = -1;
                 continue;
             }
-
+            
+            std::cout << "Final cost = " << final_cost << std::endl;
+            // TOREMOVE: Try hypothesis about shifting wrong way
+            Vec2f shift = this_output.position - predicted_features[i].position;
+            // shift(1) = 0.0f;
+            // std::cout << "shift = " << shift << std::endl;
+            // std::cout << "predicted_features = " << predicted_features[i].position << std::endl;
+            // position_after_intensity_based_refinement[i] = this_output.position - shift*2;
+            
             position_after_intensity_based_refinement[i] = this_output.position;
-            std::cout << "Position after intensity_based_refinement = " << position_after_intensity_based_refinement[i] << std::endl;
+            std::cout << "intensitybased = " << position_after_intensity_based_refinement[i] << std::endl;
             bool feature_found_from_symmetry = false;
             if (refinement_type == FeatureRefinement::GradientsXY)
             {
@@ -368,6 +379,8 @@ namespace vis
                     {
                         std::cout << "[WARNING] Corner rejected because of large difference between raw-intensity and gradient refinement: "
                                      << (this_output.position - position_after_intensity_based_refinement[i]).norm() << " px" << std::endl;
+                        std::cout << "Position after intensity_based_refinement = " << position_after_intensity_based_refinement[i] << std::endl;
+                        std::cout << "this_output.position=" << this_output.position << std::endl;
                         d->debug_display->Update();
                         std::getchar();
                     }
@@ -407,17 +420,19 @@ namespace vis
     }
 
     /**
-     * @brief No features are being detected here; instead, features will be fed in from the start.
+     * @brief No features are being detected here; instead, features will be fed in from the start. 
+     * I kept the function name DetectFeatures for easy debugging with 10K param toolbox.
      *
      * feature_predictions within this function refers to the features we have detected.
      *
-     * @param image
-     * @param features
-     * @param detection_visualization
+     * @param image original image with features
+     * @param features refined features
+     * @param detection_visualization visualizer for visualizing detections. nullptr if not debugging.
      */
     void FeatureDetector::DetectFeatures(
         const Image<Vec3u8> &image,
         std::vector<Vec2f> &features,
+        const std::string yaml_filename,
         Image<Vec3u8> *detection_visualization)
     {
         const bool kDebug = true;
