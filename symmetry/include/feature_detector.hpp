@@ -178,9 +178,8 @@ namespace vis
 
         void DetectFeatures(
             const Image<Vec3u8> &image,
-            std::vector<Vec2f> &features,
-            const std::string yaml_filename,
-            Image<Vec3u8> *detection_Visualization);
+            std::vector<std::pair<bool, Vec2f>> &features,
+            Image<Vec3u8> *detection_visualization);
 
         void PredictAndDetectFeatures(
             const Image<u8> &image,
@@ -194,7 +193,7 @@ namespace vis
 
         bool SetPatternYAMLPaths(const std::string path);
 
-        void GetFeaturePredictions(std::vector<FeatureDetection>& feature_predictions);
+        void GetFeaturePredictions(std::vector<FeatureDetection> &feature_predictions);
 
     private:
         int window_half_extent;

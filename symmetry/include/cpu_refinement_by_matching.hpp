@@ -161,38 +161,38 @@ static bool ComputeFeatureRefinementAgainstPatternCostAndJacobian(
   }
   
 //   // DEBUG: Visualize the transformed intensities.
-  constexpr int kVisualizationResolution = 40;
-  Image<float> visualization(kVisualizationResolution, kVisualizationResolution);
-  visualization.SetTo(0.f);
-  Image<int> visualization_count(kVisualizationResolution, kVisualizationResolution);
-  visualization_count.SetTo(0);
-  for (int i = 0; i < num_samples; ++ i) {
-    Vec2i pixel = (Vec2f::Constant(0.5f * kVisualizationResolution) + 0.5f * kVisualizationResolution * samples[i]).cast<int>();
-    if (pixel.x() < 0 || pixel.y() < 0 ||
-        pixel.x() >= visualization.width() || pixel.y() >= visualization.height()) {
-      // NOTE: Could clamp the coordinate into the image as an alternative
-      continue;
-    }
+  // constexpr int kVisualizationResolution = 40;
+  // Image<float> visualization(kVisualizationResolution, kVisualizationResolution);
+  // visualization.SetTo(0.f);
+  // Image<int> visualization_count(kVisualizationResolution, kVisualizationResolution);
+  // visualization_count.SetTo(0);
+  // for (int i = 0; i < num_samples; ++ i) {
+  //   Vec2i pixel = (Vec2f::Constant(0.5f * kVisualizationResolution) + 0.5f * kVisualizationResolution * samples[i]).cast<int>();
+  //   if (pixel.x() < 0 || pixel.y() < 0 ||
+  //       pixel.x() >= visualization.width() || pixel.y() >= visualization.height()) {
+  //     // NOTE: Could clamp the coordinate into the image as an alternative
+  //     continue;
+  //   }
     
-    Vec2f sample_pos = position + window_half_size * samples[i];
-    float intensity = image.InterpolateBilinear(sample_pos);
-    float transformed_intensity = factor * intensity + bias;
+  //   Vec2f sample_pos = position + window_half_size * samples[i];
+  //   float intensity = image.InterpolateBilinear(sample_pos);
+  //   float transformed_intensity = factor * intensity + bias;
     
-    visualization(pixel) += transformed_intensity;
-    visualization_count(pixel) += 1;
-  }
-  for (int y = 0; y < visualization.height(); ++ y) {
-    for (int x = 0; x < visualization.width(); ++ x) {
-      int count = visualization_count(x, y);
-      if (count > 0) {
-        visualization(x, y) /= count;
-      }
-    }
-  }
-  std::cout << "Debug: Showing current transformed intensities with factor: " << factor << ", bias: " << bias << std::endl;
-  static ImageDisplay display;
-  display.Update(visualization, "Rasterized transformed intensities", 0.f, 16.f);
-  std::getchar();
+  //   visualization(pixel) += transformed_intensity;
+  //   visualization_count(pixel) += 1;
+  // }
+  // for (int y = 0; y < visualization.height(); ++ y) {
+  //   for (int x = 0; x < visualization.width(); ++ x) {
+  //     int count = visualization_count(x, y);
+  //     if (count > 0) {
+  //       visualization(x, y) /= count;
+  //     }
+  //   }
+  // }
+  // std::cout << "Debug: Showing current transformed intensities with factor: " << factor << ", bias: " << bias << std::endl;
+  // static ImageDisplay display;
+  // display.Update(visualization, "Rasterized transformed intensities", 0.f, 16.f);
+  // std::getchar();
 //   // END DEBUG
   
   return true;
@@ -261,34 +261,34 @@ bool RefineFeatureByMatching(
   }
   
 //   // DEBUG: Visualize the rendered samples.
-  constexpr int kVisualizationResolution = 40;
-  Image<float> visualization(kVisualizationResolution, kVisualizationResolution);
-  visualization.SetTo(0.f);
-  Image<int> visualization_count(kVisualizationResolution, kVisualizationResolution);
-  visualization_count.SetTo(0);
-  for (int i = 0; i < num_samples; ++ i) {
-    Vec2i pixel = (
-      Vec2f::Constant(0.5f * kVisualizationResolution) + 0.5f * kVisualizationResolution * samples[i]).cast<int>();
-    if (pixel.x() < 0 || pixel.y() < 0 ||
-        pixel.x() >= visualization.width() || pixel.y() >= visualization.height()) {
-      // NOTE: Could clamp the coordinate into the image as an alternative
-      continue;
-    }
+  // constexpr int kVisualizationResolution = 40;
+  // Image<float> visualization(kVisualizationResolution, kVisualizationResolution);
+  // visualization.SetTo(0.f);
+  // Image<int> visualization_count(kVisualizationResolution, kVisualizationResolution);
+  // visualization_count.SetTo(0);
+  // for (int i = 0; i < num_samples; ++ i) {
+  //   Vec2i pixel = (
+  //     Vec2f::Constant(0.5f * kVisualizationResolution) + 0.5f * kVisualizationResolution * samples[i]).cast<int>();
+  //   if (pixel.x() < 0 || pixel.y() < 0 ||
+  //       pixel.x() >= visualization.width() || pixel.y() >= visualization.height()) {
+  //     // NOTE: Could clamp the coordinate into the image as an alternative
+  //     continue;
+  //   }
     
-    visualization(pixel) += rendered_samples[i];
-    visualization_count(pixel) += 1;
-  }
-  for (int y = 0; y < visualization.height(); ++ y) {
-    for (int x = 0; x < visualization.width(); ++ x) {
-      int count = visualization_count(x, y);
-      if (count > 0) {
-        visualization(x, y) /= count;
-      }
-    }
-  }
-  static ImageDisplay display;
-  display.Update(visualization, "Rasterized sample rendering", 0.f, static_cast<float>(kNumAntiAliasSamples));
-  std::getchar();
+  //   visualization(pixel) += rendered_samples[i];
+  //   visualization_count(pixel) += 1;
+  // }
+  // for (int y = 0; y < visualization.height(); ++ y) {
+  //   for (int x = 0; x < visualization.width(); ++ x) {
+  //     int count = visualization_count(x, y);
+  //     if (count > 0) {
+  //       visualization(x, y) /= count;
+  //     }
+  //   }
+  // }
+  // static ImageDisplay display;
+  // display.Update(visualization, "Rasterized sample rendering", 0.f, static_cast<float>(kNumAntiAliasSamples));
+  // std::getchar();
 //   // END DEBUG
   
   // Initialize factor and bias.

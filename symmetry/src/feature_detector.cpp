@@ -119,7 +119,7 @@ namespace vis
         const int kIncrementalPredictionErrorThreshold = window_half_extent * 4 / 5.f; // In pixels. TODO: make configurable
         constexpr float kMinimumFeatureDistance = 5;                                   // in pixels; TODO: make configurable
 
-        feature_detections->resize(feature_predictions->size());
+        // feature_detections->resize(feature_predictions->size());
 
         // Used to be a while loop here. Not necessary since we're simplifying the data structures.
 
@@ -213,7 +213,7 @@ namespace vis
 
         if (debug && debug_step_by_step)
         {
-            std::cout << "[INFO] Showing new refined detections" << std::endl;
+            std::cout << "[INFO] Showing new refined detections on visualizer." << std::endl;
             d->debug_display->Update();
             std::getchar();
         }
@@ -385,7 +385,7 @@ namespace vis
                         std::getchar();
                     }
                 }
-                this_output.final_cost = -1;
+                // this_output.final_cost = -1;
             }
         }
     }
@@ -431,8 +431,7 @@ namespace vis
      */
     void FeatureDetector::DetectFeatures(
         const Image<Vec3u8> &image,
-        std::vector<Vec2f> &features,
-        const std::string yaml_filename,
+        std::vector<std::pair<bool,Vec2f>> &features,
         Image<Vec3u8> *detection_visualization)
     {
         const bool kDebug = true;
@@ -496,14 +495,17 @@ namespace vis
             &feature_predictions,
             &feature_detections,
             true,
-            true,
+            false,
             debug_colors);
 
         // Getting results from PredictAndDetectFeatures.
         for (auto &pattern_feature_detections : feature_detections)
         {
-            std::cout << pattern_feature_detections.position << std::endl;
-            features.push_back(pattern_feature_detections.position);
+            bool feature_refined = true;
+            if (pattern_feature_detections.final_cost == -1) {
+                feature_refined = false;
+            }
+            features.push_back(std::pair<bool,Vec2f>(feature_refined, pattern_feature_detections.position));
         }
     }
 }

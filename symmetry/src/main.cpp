@@ -29,6 +29,7 @@ void refine_features(
     int window_half_extent,
     std::string path_to_image,
     std::string path_to_predictions,
+    std::string path_to_results,
     CalibrationWindow *calibration_window)
 {
     const std::string IMAGE_FORMAT(".png"); // USED as a simple check for image format.
@@ -114,7 +115,8 @@ void refine_features(
         }
 
         std::cout << "[INFO] Found predictions YAML file:" << current_yaml_filepath << std::endl;
-        
+        std::string results_filepath = path_to_results + "/" + yaml_name + ".csv";
+        std::cout << "[INFO] Output results to: " << results_filepath << std::endl;
         // Initialize new 10k param detector for feature refinement.
         FeatureDetector detector(
             current_yaml_filepath,
@@ -123,37 +125,23 @@ void refine_features(
         );
 
         Image<Vec3u8> detection_visualization;
-        vector<Vec2f> features;
-        detector.DetectFeatures(image, features, "", calibration_window ? &detection_visualization : nullptr); 
+        vector<pair<bool, Vec2f>> features;
+        detector.DetectFeatures(image, features, calibration_window ? &detection_visualization : nullptr); 
         
         // Debugging main output from feature refinement
         // TODO: write to CSV.
         std::cout << path << ": " << features.size() << " features" << std::endl;
+        
+        std::ofstream results_file;
+        results_file.open(results_filepath);
+        for (auto& refinement : features) {
+            results_file << refinement.first << "," << refinement.second.x() << "," << refinement.second.y() << std::endl;
+        }
+        results_file.close();
 
         if (calibration_window)
             calibration_window->UpdateFeatureDetection(0, detection_visualization);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // NOTE: I've kept the function names same as 10k param for debugging purposes.
-    // We're not extracting any features.
-    // ExtractFeatures(
-    //     std::filesystem::path{fp},
-    //     std::filesystem::path{path_to_predictions},
-    //     detector,
-    //     dataset,
-    //     calibration_window);
 }
 
 int main(int argc, char **argv)
@@ -170,16 +158,19 @@ int main(int argc, char **argv)
     // Path to file containing predicted features, board setup, homography etc.
     std::string predictions_folder_fn = "";
     std::string image_folder_fn = "";
+    std::string results_folder_fn = "";
     bool show_visualizations;
 
     app.add_option("-w,--window-half-extent", window_half_extent, "Window half extent (half size of search window)");
     app.add_option("-f,--predicted-feature-files", predictions_folder_fn, "YAML containing predictions");
     app.add_option("-i,--image_folder", image_folder_fn, "filename for image folders");
+    app.add_option("-r,--results_folder", results_folder_fn, "filename for results folders");
     app.add_option("-s,--show_visualizations", show_visualizations, "option to show visualization");
 
     CLI11_PARSE(app, argc, argv);
     std::cout << "[CLI] window-half-extent read:" << window_half_extent << std::endl;
     std::cout << "[CLI] predicted feature fn read:" << predictions_folder_fn << std::endl;
+    std::cout << "[CLI] results folder fn read:" << results_folder_fn << std::endl;
     std::cout << "[CLI] image folder fn read:" << image_folder_fn << std::endl;
     std::cout << "[CLI] show_visualizations read:" << show_visualizations << std::endl;
 
@@ -201,6 +192,7 @@ int main(int argc, char **argv)
             window_half_extent,
             image_folder_fn, // path to folder containing images.
             predictions_folder_fn,
+            results_folder_fn,
             show_visualizations ? &calibration_window : nullptr
         );
 
