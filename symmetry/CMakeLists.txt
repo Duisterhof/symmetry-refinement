@@ -16,6 +16,7 @@ add_subdirectory(third_party/yaml-cpp-0.6.0)
 
 find_package(Qt5 5.8 REQUIRED COMPONENTS Core OpenGL Widgets)
 
+find_package(Eigen3 REQUIRED)
 # find_package(Qt5X11Extras REQUIRED)
 find_package(Threads REQUIRED)
 
@@ -57,6 +58,7 @@ set(VISUALIZER
 add_library(symmetry_refinement_visualizer SHARED ${VISUALIZER})
 target_include_directories(symmetry_refinement_visualizer
     PUBLIC
+    ${EIGEN3_INCLUDE_DIR}
     ./libvis/src
     third_party/puzzlepaint_visualizer
     third_party/sophus
@@ -70,6 +72,7 @@ target_link_libraries(symmetry_refinement_visualizer
     ${OPENGL_LIBRARY}
     ${Qt5Widgets_LIBRARIES}
     ${Qt5X11Extras_LIBRARIES}
+
 )
 set_target_properties(symmetry_refinement_visualizer PROPERTIES LINKER_LANGUAGE CXX)
 
