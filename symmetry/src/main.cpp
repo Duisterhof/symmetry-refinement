@@ -98,10 +98,6 @@ void refine_features(
             lastindex = current_file.find_last_of("."); 
             yaml_name = current_file.substr(0, lastindex);
 
-            std::cout << "image_name:" << image_name << std::endl;
-            std::cout << "yaml_name:" << yaml_name << std::endl;
-            std::cout << "files are same:" << yaml_name.compare(image_name) << std::endl;
-
             // same!
             if (yaml_name.compare(image_name) == 0) {
                 found_yaml = true;

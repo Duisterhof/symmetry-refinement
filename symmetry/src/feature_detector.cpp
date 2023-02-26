@@ -60,12 +60,8 @@ namespace vis
                 std::cout << "[ERROR] Cannot read file: " << feat_yaml_name << std::endl;
             }
 
-            Mat3f homography = Eigen::Map<Mat3f>(file_node["homography"].as<std::vector<float>>().data());
-            homography.transposeInPlace(); // I can't figure out how to read this in properly so this will suffice lol.
-            // This is also pattern to pixel, so invert it.
-            std::cout << "Homography read in = \n"
-                      << homography << std::endl;
-
+            std::vector<std::vector<float>> l_homography = 
+                file_node["homography"].as<std::vector<std::vector<float>>>();         
             std::vector<std::vector<float>> l_feat_px_coord =
                 file_node["features"].as<std::vector<std::vector<float>>>();
             std::vector<std::vector<float>> l_feat_pat_coord =
@@ -78,6 +74,9 @@ namespace vis
                 FeatureDetection ft;
                 Vec2f feat_px_coords = Eigen::Map<Vec2f>(l_feat_px_coord[i].data());
                 Vec2f feat_pat_coords = Eigen::Map<Vec2f>(l_feat_pat_coord[i].data());
+                Mat3f homography = Eigen::Map<Mat3f>(l_homography[i].data());
+                homography.transposeInPlace(); // I can't figure out how to read this in properly so this will suffice lol.
+                std::cout << "Homography read in: \n" << homography << std::endl; 
 
                 Vec2f predicted_position = feat_px_coords - Vec2f::Constant(0.5f);
 
@@ -92,9 +91,12 @@ namespace vis
                     0, 0, 1;
                 ft.position = predicted_position;
 
-                // Mat3f calculated_homography = to_local_image * homography *  to_local_pattern;
-                Mat3f calculated_homography = to_local_image * homography * to_local_pattern;
-                ft.local_pixel_tr_pattern = calculated_homography;
+                Mat3f calculated_homography = to_local_image * homography *  to_local_pattern;
+                // Mat3f calculated_homography = to_local_image * homography * to_local_pattern;
+                calculated_homography /= calculated_homography(2,2);
+
+
+                ft.local_pixel_tr_pattern = calculated_homography;                
                 std::cout << "Homography calculated = \n"
                           << calculated_homography << std::endl;
                 feature_predictions.push_back(ft);
@@ -170,7 +172,7 @@ namespace vis
             FeatureDetection &refined_feature = refined_detections[index];
             ++index;
             std::cout << "current_feature cost = " << refined_feature.final_cost << std::endl;
-            std::cout << "current_feature_pos = " << refined_feature.position << std::endl;
+            std::cout << "current_feature_pos = " << refined_feature.position << std::endl << std::endl;
 
             // For features discarded during refinement, the cost is set to a negative value.
             if (refined_feature.final_cost < 0)
@@ -252,43 +254,9 @@ namespace vis
             const Mat3f &local_pixel_tr_pattern = predicted_features[i].local_pixel_tr_pattern;
             Mat3f local_pattern_tr_pixel = local_pixel_tr_pattern.inverse();
             float final_cost;
-            if (!RefineFeatureByMatching(
-                    num_intensity_samples,
-                    d->samples,
-                    image,
-                    window_half_extent,
-                    predicted_features[i].position,
-                    local_pattern_tr_pixel,
-                    d->patterns[0], // TODO: Use the correct pattern here instead of always the one with index 0
-                    &this_output.position,
-                    &final_cost,
-                    debug))
-            {
-                // Could not find a corner here.
-                if (debug)
-                {
-                    d->debug_display->AddSubpixelDotPixelCornerConv(predicted_features[i].position + Vec2f::Constant(0.5f), Vec3u8(255, 0, 0));
-                    if (debug_step_by_step)
-                    {
-                        std::cout << "[WARNING] Failure during matching-based refinement" << std::endl;
-                        d->debug_display->Update();
-                        std::getchar();
-                    }
-                }
-                this_output.final_cost = -1;
-                continue;
-            }
 
-            std::cout << "Final cost = " << final_cost << std::endl;
-            // TOREMOVE: Try hypothesis about shifting wrong way
-            Vec2f shift = this_output.position - predicted_features[i].position;
-            // shift(1) = 0.0f;
-            // std::cout << "shift = " << shift << std::endl;
-            // std::cout << "predicted_features = " << predicted_features[i].position << std::endl;
-            // position_after_intensity_based_refinement[i] = this_output.position - shift*2;
-
+            this_output.position = predicted_features[i].position;
             position_after_intensity_based_refinement[i] = this_output.position;
-            std::cout << "intensitybased = " << position_after_intensity_based_refinement[i] << std::endl;
             bool feature_found_from_symmetry = false;
             if (refinement_type == FeatureRefinement::GradientsXY)
             {
@@ -359,11 +327,51 @@ namespace vis
                 this_output.final_cost = -1;
                 continue;
             }
+
+            // Removing translation to center (0,0) around feature point.
+
+            if (!RefineFeatureByMatching(
+                    num_intensity_samples,
+                    d->samples,
+                    image,
+                    window_half_extent,
+                    predicted_features[i].position,
+                    local_pattern_tr_pixel,
+                    d->patterns[0], // TODO: Use the correct pattern here instead of always the one with index 0
+                    &position_after_intensity_based_refinement[i],
+                    &final_cost,
+                    debug))
+            {
+                // Could not find a corner here.
+                if (debug)
+                {
+                    d->debug_display->AddSubpixelDotPixelCornerConv(predicted_features[i].position + Vec2f::Constant(0.5f), Vec3u8(255, 0, 0));
+                    if (debug_step_by_step)
+                    {
+                        std::cout << "[WARNING] Failure during matching-based refinement" << std::endl;
+                        d->debug_display->Update();
+                        std::getchar();
+                    }
+                }
+                this_output.final_cost = -1;
+                continue;
+            }
+
+            // For some reason there appears to be some translation issues.
+            position_after_intensity_based_refinement[i].x() = 
+                position_after_intensity_based_refinement[i].x() + local_pixel_tr_pattern(0,2);
+            position_after_intensity_based_refinement[i].y() = 
+                position_after_intensity_based_refinement[i].y() + local_pixel_tr_pattern(1,2);
+            
+
         }
         // Filter outliers based on the difference between the two refined positions.
         for (usize i = 0; i < num_features; ++i)
         {
             FeatureDetection &this_output = output[i];
+
+            std::cout << "Results from symmetry_based_refinement\n" << this_output.position << std::endl;
+            std::cout << "Results from matching based refinement\n" << position_after_intensity_based_refinement[i] << std::endl << std::endl;
 
             if (this_output.final_cost >= 0 &&
                 (this_output.position - position_after_intensity_based_refinement[i]).squaredNorm() > 0.75f)
@@ -380,7 +388,7 @@ namespace vis
                         std::cout << "[WARNING] Corner rejected because of large difference between raw-intensity and gradient refinement: "
                                   << (this_output.position - position_after_intensity_based_refinement[i]).norm() << " px" << std::endl;
                         std::cout << "Position after intensity_based_refinement = " << position_after_intensity_based_refinement[i] << std::endl;
-                        std::cout << "this_output.position=" << this_output.position << std::endl;
+                        std::cout << "Position after symmetry based refinement=" << this_output.position << std::endl;
                         d->debug_display->Update();
                         std::getchar();
                     }

@@ -331,7 +331,6 @@ bool RefineFeatureByMatching(
     if (final_cost) {
       *final_cost = cost;
     }
-    std::cout << "Current cost = " << cost << std::endl;
     
     // Initialize lambda?
     if (lambda < 0) {
