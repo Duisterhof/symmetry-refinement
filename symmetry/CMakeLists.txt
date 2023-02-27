@@ -19,6 +19,7 @@ find_package(Qt5 5.8 REQUIRED COMPONENTS Core OpenGL Widgets)
 find_package(Eigen3 REQUIRED)
 # find_package(Qt5X11Extras REQUIRED)
 find_package(Threads REQUIRED)
+find_package(OpenCV REQUIRED)
 
 set(VISUALIZER
     third_party/puzzlepaint_visualizer/image_display.h
@@ -109,4 +110,5 @@ target_link_libraries(symmetry_exec
     Threads::Threads
     symmetry_refinement_visualizer
     yaml-cpp2
+    ${OpenCV_LIBS}
 )

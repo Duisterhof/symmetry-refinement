@@ -2,13 +2,10 @@
 #include <filesystem> // directory_iterator
 #include <memory>     // unique_ptr
 #include <thread>     // thread
-#include "cpu_refinement_by_symmetry.hpp"
-#include "feature_detector.hpp"
 
-#include "puzzlepaint_visualizer/libvis.h"
-#include "puzzlepaint_visualizer/dataset.h"
-#include "puzzlepaint_visualizer/image_display.h"
-#include "puzzlepaint_visualizer/calibration_window.h"
+#include "extern.hpp"
+
+
 #include <unistd.h>
 
 #include <algorithm> // for command line parsing
@@ -16,6 +13,8 @@
 #include "CLI11.hpp"
 
 using namespace vis;
+
+
 
 /**
  * @brief Entrypoint for main function to create thread. (Replaces ExtractFeatures in 10K params)

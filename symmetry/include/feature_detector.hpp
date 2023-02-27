@@ -16,6 +16,12 @@
 #define FEATURE_DETECTOR_H_
 namespace vis
 {
+    // void refine_features( int window_half_extent,
+    // std::string path_to_image,
+    // std::string path_to_predictions,
+    // std::string path_to_results,
+    // CalibrationWindow *calibration_window){};
+    
     // Types of FeatureRefinement methods
     enum class FeatureRefinement
     {
